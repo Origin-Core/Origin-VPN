@@ -16,3 +16,14 @@ secrets.properties
 app/release/
 app/debug/
 *.log
+
+# ✅ فایل‌های بزرگ رو ایگنور کنید
+app/libs/*.aar
+app/libs/*.so
+*.aar
+*.so
+
+# فایل‌های موقت
+*.tmp
+*.temp
+*.lock
