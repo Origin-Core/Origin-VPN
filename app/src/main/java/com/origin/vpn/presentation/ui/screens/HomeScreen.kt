@@ -316,3 +316,205 @@ fun formatTraffic(bytes: Long): String {
         else -> "$bytes B"
     }
 }
+
+package com.origin.vpn.presentation.ui.screens
+
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
+import com.origin.vpn.presentation.viewmodel.VpnViewModel
+
+@Composable
+fun HomeScreen(
+    navController: NavController,
+    viewModel: VpnViewModel = hiltViewModel()
+) {
+    val status by viewModel.vpnStatus.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val errorMessage by viewModel.errorMessage.collectAsState()
+    
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFF0A0A0F),
+                        Color(0xFF1A1A3E),
+                        Color(0xFF0A0A0F)
+                    )
+                )
+            )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Header with Navigation
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Origin VPN",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF00BFFF)
+                )
+                
+                Row {
+                    IconButton(onClick = { navController.navigate("dashboard") }) {
+                        Icon(
+                            imageVector = Icons.Default.Dashboard,
+                            contentDescription = "Dashboard",
+                            tint = Color.White
+                        )
+                    }
+                    IconButton(onClick = { navController.navigate("settings") }) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Settings",
+                            tint = Color.White
+                        )
+                    }
+                }
+            }
+            
+            // Status Text
+            AnimatedContent(
+                targetState = status.isConnected,
+                transitionSpec = {
+                    fadeIn() + slideInVertically() with fadeOut() + slideOutVertically()
+                }
+            ) { isConnected ->
+                Text(
+                    text = if (isConnected) "🛡️ Protected" else "🔓 Unprotected",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isConnected) Color(0xFF00FF88) else Color(0xFFFF4444)
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(40.dp))
+            
+            // Main VPN Button
+            GlassmorphicVpnButton(
+                isConnected = status.isConnected,
+                isLoading = isLoading,
+                onClick = {
+                    if (status.isConnected) {
+                        viewModel.disconnectVpn()
+                    } else {
+                        viewModel.connectVpn()
+                    }
+                }
+            )
+            
+            Spacer(modifier = Modifier.height(32.dp))
+            
+            // Status Card
+            if (status.isConnected) {
+                AnimatedVisibility(
+                    visible = status.isConnected,
+                    enter = fadeIn() + expandHorizontally(),
+                    exit = fadeOut() + shrinkHorizontally()
+                ) {
+                    VpnStatusCard(status = status)
+                }
+            }
+            
+            Spacer(modifier = Modifier.weight(1f))
+            
+            // Bottom Navigation
+            BottomNavigationBar(navController, currentRoute = "home")
+        }
+        
+        // Error Message
+        errorMessage?.let { message ->
+            Snackbar(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(16.dp),
+                action = {
+                    TextButton(onClick = { viewModel.clearError() }) {
+                        Text("Dismiss", color = Color.White)
+                    }
+                }
+            ) {
+                Text(message, color = Color.White)
+            }
+        }
+    }
+}
+
+@Composable
+fun BottomNavigationBar(
+    navController: NavController,
+    currentRoute: String = "home"
+) {
+    val items = listOf(
+        "home" to "🏠",
+        "vpn" to "🔒",
+        "device" to "📱",
+        "settings" to "⚙️"
+    )
+    
+    NavigationBar(
+        modifier = Modifier.fillMaxWidth(),
+        containerColor = Color(0xFF0A0A0F).copy(alpha = 0.9f),
+        tonalElevation = 0.dp
+    ) {
+        items.forEach { (route, icon) ->
+            NavigationBarItem(
+                icon = {
+                    Text(
+                        text = icon,
+                        fontSize = 20.sp
+                    )
+                },
+                label = {
+                    Text(
+                        text = route.capitalize(),
+                        fontSize = 10.sp
+                    )
+                },
+                selected = currentRoute == route,
+                onClick = {
+                    if (currentRoute != route) {
+                        navController.navigate(route)
+                    }
+                },
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = Color(0xFF00BFFF),
+                    unselectedIconColor = Color.Gray,
+                    selectedTextColor = Color(0xFF00BFFF),
+                    unselectedTextColor = Color.Gray,
+                    indicatorColor = Color.Transparent
+                )
+            )
+        }
+    }
+}
+
+// Keep the rest of the composables from previous phase
