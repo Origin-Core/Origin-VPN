@@ -1,0 +1,3 @@
+<resources>
+    <style name="Theme.OriginVPN" parent="android:Theme.Material.NoActionBar" />
+</resources>
