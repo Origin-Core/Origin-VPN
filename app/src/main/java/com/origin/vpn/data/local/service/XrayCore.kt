@@ -1,50 +1,43 @@
 package com.origin.vpn.data.local.service
 
 import android.content.Context
+import com.v2ray.ang.V2RayCore
 import timber.log.Timber
-import java.io.File
 
 class XrayCore(private val context: Context) {
     
     companion object {
         init {
-            // Load native libraries
+            // Load V2Ray Core library (از JitPack میاد)
             System.loadLibrary("v2ray")
-            System.loadLibrary("xray")
         }
     }
     
     private var isRunning = false
     
-    // Native methods
-    private external fun nativeInit(): Boolean
-    private external fun nativeStart(config: String): Boolean
-    private external fun nativeStop(): Boolean
-    private external fun nativeProcessPacket(data: ByteArray, length: Int): ByteArray
-    
     fun initialize(): Boolean {
         return try {
-            val result = nativeInit()
-            Timber.d("Xray Core initialized: $result")
-            result
+            V2RayCore.init(context)
+            Timber.d("V2Ray Core initialized")
+            true
         } catch (e: Exception) {
-            Timber.e(e, "Failed to initialize Xray Core")
+            Timber.e(e, "Failed to initialize V2Ray Core")
             false
         }
     }
     
     fun start(config: String): Boolean {
         return try {
-            val result = nativeStart(config)
+            val result = V2RayCore.start(config)
             if (result) {
                 isRunning = true
-                Timber.d("Xray Core started")
+                Timber.d("V2Ray Core started")
             } else {
-                Timber.e("Failed to start Xray Core")
+                Timber.e("Failed to start V2Ray Core")
             }
             result
         } catch (e: Exception) {
-            Timber.e(e, "Error starting Xray Core")
+            Timber.e(e, "Error starting V2Ray Core")
             false
         }
     }
@@ -52,17 +45,17 @@ class XrayCore(private val context: Context) {
     fun stop(): Boolean {
         return try {
             if (isRunning) {
-                val result = nativeStop()
+                val result = V2RayCore.stop()
                 if (result) {
                     isRunning = false
-                    Timber.d("Xray Core stopped")
+                    Timber.d("V2Ray Core stopped")
                 }
                 result
             } else {
                 true
             }
         } catch (e: Exception) {
-            Timber.e(e, "Error stopping Xray Core")
+            Timber.e(e, "Error stopping V2Ray Core")
             false
         }
     }
@@ -70,7 +63,7 @@ class XrayCore(private val context: Context) {
     fun processPacket(data: ByteArray, length: Int): ByteArray {
         return try {
             if (isRunning) {
-                nativeProcessPacket(data, length)
+                V2RayCore.process(data)
             } else {
                 data
             }
