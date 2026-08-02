@@ -76,4 +76,186 @@ class VpnService : VpnService() {
         
         try {
             // Build VPN interface
-            val builder
+            val builder = Builder()
+                .setSession("Origin VPN")
+                .setMtu(1500)
+                .addAddress("10.0.0.2", 24)
+                .addRoute("0.0.0.0", 0)
+                .addDnsServer("1.1.1.1")
+                .addDnsServer("8.8.8.8")
+                .setBlocking(true)
+                .setUnderlyingNetworks(null)
+            
+            // Configure VPN
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                builder.setMetered(false)
+            }
+            
+            vpnInterface = builder.establish()
+            
+            if (vpnInterface != null) {
+                isRunning = true
+                startForeground(NOTIFICATION_ID, createNotification())
+                
+                // Start Xray Core with config
+                val configJson = """
+                    {
+                        "inbounds": [
+                            {
+                                "port": 1080,
+                                "listen": "127.0.0.1",
+                                "protocol": "socks",
+                                "settings": {}
+                            }
+                        ],
+                        "outbounds": [
+                            {
+                                "protocol": "vmess",
+                                "settings": {
+                                    "vnext": [
+                                        {
+                                            "address": "your-server.com",
+                                            "port": 443,
+                                            "users": [
+                                                {
+                                                    "id": "your-uuid",
+                                                    "alterId": 0,
+                                                    "security": "auto"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                "streamSettings": {
+                                    "network": "ws",
+                                    "wsSettings": {
+                                        "path": "/your-path",
+                                        "headers": {
+                                            "Host": "your-host.com"
+                                        }
+                                    },
+                                    "security": "tls"
+                                }
+                            }
+                        ]
+                    }
+                """.trimIndent()
+                
+                // Start Xray
+                xrayCore.start(configJson)
+                
+                startVpnProcessing()
+                Timber.d("VPN started successfully with Xray Core")
+            }
+            
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to start VPN")
+            stopVpn()
+        }
+    }
+    
+    private fun startVpnProcessing() {
+        serviceScope.launch {
+            val inputStream = FileInputStream(vpnInterface?.fileDescriptor)
+            val outputStream = FileOutputStream(vpnInterface?.fileDescriptor)
+            
+            // Process packets through Xray
+            processVpnPackets(inputStream, outputStream)
+        }
+    }
+    
+    private suspend fun processVpnPackets(inputStream: FileInputStream, outputStream: FileOutputStream) {
+        Timber.d("VPN packet processing started")
+        
+        // This will handle packet routing through Xray
+        while (isRunning) {
+            try {
+                val buffer = ByteArray(65535)
+                val length = inputStream.read(buffer)
+                
+                if (length > 0) {
+                    // Process packet through Xray
+                    val processedData = xrayCore.processPacket(buffer, length)
+                    outputStream.write(processedData)
+                    outputStream.flush()
+                }
+            } catch (e: Exception) {
+                if (isRunning) {
+                    Timber.e(e, "Error processing packet")
+                }
+            }
+        }
+    }
+    
+    private fun stopVpn() {
+        isRunning = false
+        serviceScope.cancel()
+        
+        try {
+            xrayCore.stop()
+            vpnInterface?.close()
+            vpnInterface = null
+        } catch (e: Exception) {
+            Timber.e(e, "Error stopping VPN")
+        }
+        
+        stopForeground(true)
+        Timber.d("VPN stopped")
+    }
+    
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                CHANNEL_ID,
+                "VPN Service",
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = "Origin VPN Service Channel"
+            }
+            
+            val manager = getSystemService(NotificationManager::class.java)
+            manager.createNotificationChannel(channel)
+        }
+    }
+    
+    private fun createNotification(): Notification {
+        val intent = Intent(this, MainActivity::class.java)
+        val pendingIntent = PendingIntent.getActivity(
+            this,
+            0,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        
+        val disconnectIntent = Intent(this, VpnService::class.java).apply {
+            action = ACTION_DISCONNECT
+        }
+        val disconnectPendingIntent = PendingIntent.getService(
+            this,
+            1,
+            disconnectIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        
+        return NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("Origin VPN")
+            .setContentText("Connected - Protected")
+            .setSmallIcon(R.drawable.ic_vpn)
+            .setContentIntent(pendingIntent)
+            .addAction(R.drawable.ic_disconnect, "Disconnect", disconnectPendingIntent)
+            .setOngoing(true)
+            .build()
+    }
+    
+    override fun onDestroy() {
+        super.onDestroy()
+        instance = null
+        stopVpn()
+        Timber.d("VPN Service destroyed")
+    }
+    
+    override fun onRevoke() {
+        super.onRevoke()
+        stopVpn()
+    }
+}
