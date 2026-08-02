@@ -11,9 +11,7 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.origin.vpn.presentation.ui.screens.DeviceInfoScreen
-import com.origin.vpn.presentation.ui.screens.HomeScreen
-import com.origin.vpn.presentation.ui.screens.SplashScreen
+import com.origin.vpn.presentation.ui.screens.*
 import com.origin.vpn.presentation.ui.theme.OriginVPNTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -41,13 +39,16 @@ class MainActivity : ComponentActivity() {
                             HomeScreen(navController)
                         }
                         composable("vpn") {
-                            // VPN details screen
+                            VpnScreen() // Will be implemented
                         }
                         composable("device") {
                             DeviceInfoScreen()
                         }
+                        composable("dashboard") {
+                            DashboardScreen()
+                        }
                         composable("settings") {
-                            // Settings screen
+                            SettingsScreen() // Will be implemented
                         }
                     }
                 }
