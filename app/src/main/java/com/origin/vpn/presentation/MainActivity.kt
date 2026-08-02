@@ -11,6 +11,7 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.origin.vpn.presentation.ui.screens.HomeScreen
 import com.origin.vpn.presentation.ui.screens.SplashScreen
 import com.origin.vpn.presentation.ui.theme.OriginVPNTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -36,7 +37,16 @@ class MainActivity : ComponentActivity() {
                             SplashScreen(navController)
                         }
                         composable("home") {
-                            // Home screen - Phase 2
+                            HomeScreen(navController)
+                        }
+                        composable("vpn") {
+                            // VPN details screen - Phase 2.5
+                        }
+                        composable("device") {
+                            // Device info screen - Phase 3
+                        }
+                        composable("settings") {
+                            // Settings screen - Phase 5
                         }
                     }
                 }
