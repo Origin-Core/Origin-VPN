@@ -1,4 +1,3 @@
-// App level build.gradle.kts
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -20,6 +19,10 @@ android {
         versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        
+        ndk {
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64")
+        }
     }
 
     buildTypes {
@@ -30,6 +33,11 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+        }
+        debug {
+            isMinifyEnabled = false
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
         }
     }
     
@@ -48,6 +56,27 @@ android {
     
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.4"
+    }
+    
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+    }
+    
+    sourceSets {
+        getByName("main") {
+            jniLibs.srcDirs("src/main/jniLibs")
+            assets.srcDirs("src/main/assets")
+        }
+    }
+}
+
+repositories {
+    google()
+    mavenCentral()
+    maven {
+        url = uri("https://jitpack.io")
     }
 }
 
@@ -78,11 +107,25 @@ dependencies {
     // DataStore
     implementation("androidx.datastore:datastore-preferences:1.0.0")
     
+    // Room
+    implementation("androidx.room:room-runtime:2.6.0")
+    ksp("androidx.room:room-compiler:2.6.0")
+    implementation("androidx.room:room-ktx:2.6.0")
+    
     // Timber
     implementation("com.jakewharton.timber:timber:5.0.1")
     
+    // Coil
+    implementation("io.coil-kt:coil-compose:2.5.0")
+    
     // Lottie
     implementation("com.airbnb.android:lottie-compose:6.1.0")
+    
+    // Gson (برای JSON)
+    implementation("com.google.code.gson:gson:2.10.1")
+    
+    // ✅ V2Ray Core از JitPack (جایگزین libv2ray.aar)
+    implementation("com.github.2dust:v2rayNG:2.3.2")
     
     // Testing
     testImplementation("junit:junit:4.13.2")
