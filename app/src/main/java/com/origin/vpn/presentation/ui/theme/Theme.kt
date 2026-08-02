@@ -15,13 +15,13 @@ import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 import com.origin.vpn.R
 
-// ==================== 1. Color Scheme ====================
+// ==================== Color Scheme ====================
 private val DarkColorScheme = darkColorScheme(
-    primary = Color(0xFF00BFFF),      // Neon Blue
-    secondary = Color(0xFF00FF88),    // Neon Green
-    tertiary = Color(0xFFFF00FF),     // Neon Pink
-    background = Color(0xFF0A0A0F),   // Dark background
-    surface = Color(0xFF1A1A2E),      // Dark surface
+    primary = Color(0xFF00BFFF),
+    secondary = Color(0xFF00FF88),
+    tertiary = Color(0xFFFF00FF),
+    background = Color(0xFF0A0A0F),
+    surface = Color(0xFF1A1A2E),
     surfaceVariant = Color(0xFF2A2A3E),
     onPrimary = Color.White,
     onSecondary = Color.Black,
@@ -29,14 +29,14 @@ private val DarkColorScheme = darkColorScheme(
     onSurface = Color.White
 )
 
-// ==================== 2. Font Family ====================
+// ==================== Font Family ====================
 val VazirmatnFamily = FontFamily(
     Font(R.font.vazirmatn_regular, FontWeight.Normal),
     Font(R.font.vazirmatn_medium, FontWeight.Medium),
     Font(R.font.vazirmatn_bold, FontWeight.Bold)
 )
 
-// ==================== 3. Typography ====================
+// ==================== Typography ====================
 val Typography = Typography(
     displayLarge = TextStyle(
         fontFamily = VazirmatnFamily,
@@ -105,10 +105,10 @@ val Typography = Typography(
     )
 )
 
-// ==================== 4. Theme Composable ====================
+// ==================== Theme ====================
 @Composable
 fun OriginVPNTheme(
-    darkTheme: Boolean = true, // Always dark for cyber style
+    darkTheme: Boolean = true,
     content: @Composable () -> Unit
 ) {
     val colorScheme = DarkColorScheme
@@ -123,7 +123,7 @@ fun OriginVPNTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = Typography, // ← اینجا تایپوگرافی اضافه شده
+        typography = Typography,  // <ا اضافه شده
         content = content
     )
 }
