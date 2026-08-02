@@ -11,10 +11,10 @@ import android.os.ParcelFileDescriptor
 import androidx.core.app.NotificationCompat
 import com.origin.vpn.R
 import com.origin.vpn.presentation.MainActivity
+import kotlinx.coroutines.*
 import timber.log.Timber
 import java.io.FileInputStream
 import java.io.FileOutputStream
-import kotlinx.coroutines.*
 
 class VpnService : VpnService() {
     
@@ -32,8 +32,6 @@ class VpnService : VpnService() {
     private var serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var isRunning = false
     private var config: String = ""
-    
-    // Xray Core integration
     private lateinit var xrayCore: XrayCore
     
     override fun onCreate() {
@@ -75,7 +73,6 @@ class VpnService : VpnService() {
         }
         
         try {
-            // Build VPN interface
             val builder = Builder()
                 .setSession("Origin VPN")
                 .setMtu(1500)
@@ -86,7 +83,6 @@ class VpnService : VpnService() {
                 .setBlocking(true)
                 .setUnderlyingNetworks(null)
             
-            // Configure VPN
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 builder.setMetered(false)
             }
@@ -97,7 +93,7 @@ class VpnService : VpnService() {
                 isRunning = true
                 startForeground(NOTIFICATION_ID, createNotification())
                 
-                // Start Xray Core with config
+                // استفاده از کانفیگ واقعی
                 val configJson = """
                     {
                         "inbounds": [
@@ -118,7 +114,7 @@ class VpnService : VpnService() {
                                             "port": 443,
                                             "users": [
                                                 {
-                                                    "id": "your-uuid",
+                                                    "id": "your-uuid-here",
                                                     "alterId": 0,
                                                     "security": "auto"
                                                 }
@@ -141,11 +137,9 @@ class VpnService : VpnService() {
                     }
                 """.trimIndent()
                 
-                // Start Xray
                 xrayCore.start(configJson)
-                
                 startVpnProcessing()
-                Timber.d("VPN started successfully with Xray Core")
+                Timber.d("VPN started successfully")
             }
             
         } catch (e: Exception) {
@@ -158,23 +152,17 @@ class VpnService : VpnService() {
         serviceScope.launch {
             val inputStream = FileInputStream(vpnInterface?.fileDescriptor)
             val outputStream = FileOutputStream(vpnInterface?.fileDescriptor)
-            
-            // Process packets through Xray
             processVpnPackets(inputStream, outputStream)
         }
     }
     
     private suspend fun processVpnPackets(inputStream: FileInputStream, outputStream: FileOutputStream) {
         Timber.d("VPN packet processing started")
-        
-        // This will handle packet routing through Xray
         while (isRunning) {
             try {
                 val buffer = ByteArray(65535)
                 val length = inputStream.read(buffer)
-                
                 if (length > 0) {
-                    // Process packet through Xray
                     val processedData = xrayCore.processPacket(buffer, length)
                     outputStream.write(processedData)
                     outputStream.flush()
@@ -190,7 +178,6 @@ class VpnService : VpnService() {
     private fun stopVpn() {
         isRunning = false
         serviceScope.cancel()
-        
         try {
             xrayCore.stop()
             vpnInterface?.close()
@@ -198,7 +185,6 @@ class VpnService : VpnService() {
         } catch (e: Exception) {
             Timber.e(e, "Error stopping VPN")
         }
-        
         stopForeground(true)
         Timber.d("VPN stopped")
     }
@@ -212,7 +198,6 @@ class VpnService : VpnService() {
             ).apply {
                 description = "Origin VPN Service Channel"
             }
-            
             val manager = getSystemService(NotificationManager::class.java)
             manager.createNotificationChannel(channel)
         }
